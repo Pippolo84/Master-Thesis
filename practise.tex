@@ -1,0 +1,442 @@
+\chapter{PRACTISE framework\label{chap:PRACTISE}}
+
+In this chapter we will describe PRACTISE, a novel framework to help developing
+new scheduling algorithm for the Linux kernel in user space. 
+We briefly present a survey about the state-of-art kernel development tools,
+highlighting the major advantages and drawbacks of each one. Then, we will show 
+why a PRACTISE may be useful and how it is designed.
+
+Finally, we will compare the results of some experiments made both in PRACTISE 
+and in the Linux kernel.
+
+\section{Tools for Linux kernel development\label{kernel_dev_tools}}
+Scheduling on multi-core and multiprocessor system is an open research field
+both from the point of view of the theory and for the technical difficulties in
+implementing an efficient scheduling algorithm in the kernel.
+
+Regarding the second problem, we're going to point out the difficulties that kernel
+developers encounter in their task.
+
+The scheduler is a fundamental part of the operating system kernel: a buggy scheduler
+will soon chrash the system, usually at random and unexpected points. The major difficulty
+that a prospective developer encounters when developing a new scheduling algorithms derives
+from the fact that, when the system crashes, it is difficult to reconstruct the sequence
+of events and states that led to the crash.
+
+The developer has to carefully analyse system logs and traces, but this task is far
+from simple due to the complexity of the kernel itself: the number of functions that compose
+a commercial \emph{OS} like Linux is huge. More importantly, it is often impossible to 
+impose a precise sequence of events to deterministically reproduce a particular status.
+Hence, it is practically impossible to run a sequence of test-cases.
+
+This problem is exacerbated in multi-core architectures where the scheduler service routines
+run in parallel on the different processors, and make use of shared data structures that are
+accessed in parallel. In these cases, it is necessary to ensure that the data structures
+remain consistent under every possible interleaving of the service functions: as we will see
+in the following sections, this problem is far from trivial.
+
+Now let us present a quick list of the most widely adopted solutions for Linux kernel development,
+with particular reference to the tools specifically designed for the developing of a new 
+scheduling algorithm.
+
+\subsection{LinSched\label{LinSched}}
+\emph{LinSched} was originally developed by the Real Time System Group at University of
+North Carolina at Chapel Hill, and it's currently mantained by P. Turner from Google. This
+tool lets developers modify the behaviour of the Linux scheduler and test changes in user-space.
+One of the major strength points of this tool is that it introduces very few modifications
+in the kernel sources: the developer can write kernel code and, once satisfied by tests,
+he has kernel ready patches at hand. One key point of LinSched is that it runs as a single
+thread user-space program. This leads to a facilitated debugging process, because we can
+effectively use user-space common tool like, among the others: \textit{GDB}, \textit{gprof} 
+and \textit{Valgrind}.
+
+On the other hand, single-threading is a notable drawback when we are focusing on the 
+analysis of behaviour assumining a high degree of concurrency. LinSched can indeed verify 
+locking, but it cannot precisely model multi-core contention.
+
+\subsection{LITMUS$^{RT}$\label{LITMUS}}
+We have already described LITMUS in Section~\ref{sec:StateArt_LITMUS}, here we are going
+to point out the facilities that come with LITMUS to facilitate the development of a 
+new real-time scheduling algorithm.
+
+LITMUS provides an integrated tracing infrastructure (named \emph{Feather-Trace}) with which performance
+and overhead data can be collected for off-line processing.
+
+Being a research tool rather than a production-quality system, LITMUS does not target
+Linux mainline inclusion nor POSIX-compliance: in other words code patches created with it
+cannot be seamless applied to a ``Vanilla'' Linux kernel.
+
+\subsection{KVM + GDB\label{KVM_GDB}}
+The very first step after having modified the kernel is usually to run it on a virtualized
+environment. This solution allows to create a virtual machine with suitable characteristics
+for the developed code (like a high number of virtual cores to simulate a high concurrency
+platform) and with a faster booting process compared to that of a physical machine.
+
+In addition to this, KVM has on option to expose a server on a port where GDB can connect to
+control the kernel execution. Even if this solution has some limitations, like the impossibility
+of using software breakpoints, it is indeed an invaluable help in the debugging process.
+
+Unfortunately, this solution can hardly be used in a presence of high concurrency, moreover,
+it can occasionally affect the repeatability of certain bugs.
+
+\section{PRACTISE architecture\label{PRACTISE_arch}}
+PRACTISE emulates the behaviour of the Linux scheduler subsystem on a multi-core architecture
+with \emph{M} parallel cores. The tool can be executed on a machine with \emph{N} cores, with
+\emph{N} that can be less, equal or greater than \emph{M}. The tool can be executed in one of
+the following modes:
+
+\begin{itemize}
+\item \emph{testing}
+\item \emph{performance analysis}
+\end{itemize}
+
+Each processor in the simulated system is modelled by a software thread that performs a cycle
+in which:
+
+\begin{itemize}
+\item scheduling events are generated at random
+\item the corresponding scheduling functions are invoked
+\item statistics are collected
+\end{itemize}
+
+In \emph{testing mode}, a special ``testing'' thread is executed periodically and it performs
+consistency checks on the shared data structures. In the \emph{performance analysis} mode, instead,
+each thread is \emph{pinned} on a processor, and the memory is locked to avoid spurious page
+faults; for this reason, to obtain realistic performances it is necessary to set 
+\( \emph{M} \leq \emph{N} \).
+
+\subsection{Ready queues\label{PRACTISE_ready_queues}}
+In the current version of PRACTISE the structure of distributed queues as it is in the kernel
+has been mantained. The same \emph{push} and \emph{pull} algorithms used in Linux to
+migrate tasks between runqueues, as described in Section~\ref{sec:MULTICORERT}, have been implemented too. 
+To speed up the \emph{push} operation we have seen that the current release of \texttt{SCHED\_DEADLINE}
+uses a max heap to store the deadlines of the tasks executing on the processors. 
+In a similar manner, the current release of \texttt{SCHED\_RT} scheduling class uses a priority 
+map\footnote{implemented in kernel/sched/cpupri.c} to record, for each processor, the priority 
+value of the highest priority tasks. We find those global data structure even in
+PRACTISE, with one key difference: in PRACTISE we developed and tested a \emph{cpudl} data
+structure to speed up also the \emph{pull} operations in \texttt{SCHED\_DEADLINE} scheduling class. 
+This solution and its potential advantages has been already described in Section~\ref{sec:pull_algo}.
+
+During the simulation, tasks are inserted into (removed from) the ready queues using the
+\texttt{enqueue()} (\texttt{dequeue()}) function, respectively. In Linux, the queues are implemented
+as red-black trees. In PRACTISE, for the sake of simplicity, we have implemented them as priority heaps, 
+using the data structure proposed by B. Brandenburg~\footnote{Code available here:
+  \url{http://bit.ly/IozLxM}.}. Since we are mainly interested in
+observing the migration tasks pattern of activity, this difference don't affect our
+analysis.\\
+In the following subsections, where we're going to analyze in great detail the tool internals, we will refer
+to the global data structures used to speed up the push and pull operations as \texttt{push\_struct}
+and \texttt{pull\_struct}, respectively.
+
+\subsection{Locking and synchronization\label{PRACTISE_lock_and_synch}}
+PRACTISE uses a range of locking and synchronization mechanisms that mimic the corresponding mechanisms
+in the Linux kernel. An exhaustive list is given in Table~\ref{tab:lock_compare}. These differences
+are major culprits for the slight changes needed to port code developed on the tool in the kernel, as
+we will see in Section~\ref{sec:PRACTISE_port_Linux}.
+
+It has to be noted that \texttt{wmb} and \texttt{rmb} kernel memory barriers have no corresponding operations
+in user-space; therefore we have to issue a full memory barrier (\texttt{\_\_sync\_synchronize}) for every
+occurence of them.
+
+\subsection{Event generation and processing\label{sec:PRACTISE_event_gen}}
+PRACTISE cannot execute or simulate a real application. Instead, each threads (that emulates a processor)
+periodically generates random scheduling events according to a certain distribution, and calls the scheduler
+functions. The goals of PRACTISE are to make sure that the developer can easily debug, test, compare and
+evaluate real-time scheduling algorithms for multi-core processors. Therefore, we identified two main
+events: \emph{activation} and \emph{blocking}.
+
+When a task is activated, it must be inserted in one of the 
+kernel queues; since such an event can cause a preemption, the scheduler is invoked, data structures are
+updated, etc. Something similar happens when a task self-suspends (for example because it blocks on a
+semaphore, or it suspends on a timer).
+
+The pseudo-code for the task activation is represented in Listing~\ref{lst:task_activation}.
+
+\begin{lstlisting}[language=C, caption={Task activation pseudo-code},
+                        label={lst:task_activation}]
+
+on_activation(task) {
+	enqueue(task, local_queue);
+	pull();	/* pre-schedule */
+	push();	/* post-schedule*/
+}
+
+\end{lstlisting} 
+
+The code mimics the sequence of events that are performed in the Linux code:
+
+\begin{itemize}
+\item First, the task is inserted in the local queue
+\item Then, the scheduler performs a \emph{pre-schedule}, corresponding to \texttt{pull()}, which looks
+at the global data structure \texttt{pull\_struct} to find the task to be pulled; if it finds it, does
+a sequence of \texttt{dequeue()} and \texttt{enqueue()}.
+\item Then, the Linux scheduler performs the real schedule function; this corresponds to setting the
+\texttt{curr} pointer to the executing task. In PRACTISE this step is skipped, as there is no real
+context switch to be performed.
+\item Finally, a \emph{post-schedule} is performed, consisting of a \texttt{push()} operation, which
+looks at the global data structure \texttt{push\_struct} to see if some task need to be migrated, and
+in case the response is positive, performs a \texttt{dequeue()} followed by an \texttt{enqueue()}.
+A similar thing happens when a task blocks (see the pseudo-code for the task blocking operation
+in Listing~\ref{lst:task_blocking}).
+\end{itemize}
+
+\begin{lstlisting}[language=C, caption={Task blocking pseudo-code},
+                        label={lst:task_blocking}]
+
+on_block(task) {
+        dequeue(&task, local_queue);
+        pull(); /* pre-schedule */
+        push(); /* post-schedule*/
+}
+
+\end{lstlisting}
+
+\begin{table*}[htb]
+\input{tabs/lock_compare.tex}
+\caption{Locking and synchronisation mechanisms (Linux vs. PRACTISE).}
+\label{tab:lock_compare}
+\end{table*}
+
+As anticipated, every processor is simulated by a periodic thread. The thread period can be set varying
+a constant in the \texttt{parameters.h} header file and represents the average frequency of events 
+arriving at the processor. At every cycle, the thread randomly select one between the following events:
+
+\begin{itemize}
+\item \texttt{activation}
+\item \texttt{early\_finish}
+\item \texttt{idle}
+\end{itemize}
+
+In the first case, a task is generated with a random value of the deadline and function 
+\texttt{on\_activation()} is called. In the second case, the task currently executing on the processor 
+blocks: therefore function \texttt{on\_block()} is called. In the last case, nothing happens.
+Additionally, in all cases, the deadline of the executing task is checked against the current time: 
+if the deadline has passed, then the current task is blocked, and here again, function \texttt{on\_block()} 
+is called.
+
+With PRACTISE, it is possible to specify the period of the thread cycle, the probability of an activation
+event, and the probability of an early finish.
+
+\subsection{Data structures in PRACTISE\label{sec:PRACTISE_data_struct}}
+
+PRACTISE has a modular structure, tailored to provide flexibility in developing new algorithms. The
+interface exposed to the user consists of hooks to function that each global structure must provide.
+The most important hooks are:
+
+\begin{description}
+\item[\texttt{data\_init}] initialises the structure, e.g. spinlock init, dynamic memory allocation, etc.
+\item[\texttt{data\_cleanup}] performs clean up tasks at the end of a simulation.
+\item[\texttt{data\_preempt}] called each time a local queue chenges its status (e.g. an arriving task
+has higher priority that the currently executing one, so it causes a preemption); this function modifies 
+the global structure to reflect new local queue status.
+\item[\texttt{data\_find}] used by a scheduling policy to find the best CPU to (from) which push (pull) a
+task.
+\item[\texttt{data\_check}] implements the \emph{checker} mechanism (described below).
+\end{description}
+
+One of the major features provided by PRACTISE is the \emph{checking} infrastructure. Since each data
+structure has to obey different rules to preserve consistency among successive updates, the user has to
+equip the implemented algorithm with a proper checking function. When the tool is used in testing mode,
+the \emph{data\_check} function is called at regular intervals. Therefore, an on-line validation is
+performed in presence of real concurrency thus increasing the probability of discovering bugs at an
+early stage of the development process. User-space debugging techniques can then be used to fix design
+or developing flaws.
+
+To give an example, the \emph{checking} function for SCHED\_DEADLINE \emph{cpudl} structure ensures 
+the max-heap property: if \emph{B} is a child node of \emph{A}, then \( \emph{deadline(A)} \geq 
+\emph{deadline(B)} \); it also check consistency between the heap and the array used to perform
+updates on intermediates nodes (see~\cite{lelli2011efficient} for
+further details). We also implemented a checking function for \emph{cpupri} data structure:
+periodically, all ready queues are locked, and the content of the data structure is compared against
+the corresponding highest priority task in each queue, and the consistency of the flag \texttt{overloaded}
+in the \texttt{struct root\_domain} is checked. We found that the data struture id always perfectly
+consistent to an external observer.
+
+\section{Performance analysis with PRACTISE\label{PRACTISE_perf_anal}}
+
+To collect the measurements we use the TSC\footnote{Time Stamp Counter} of IA-32 and IA-64 Instruction
+Set Architectures. The TSC is a special 64-bit per-CPU register that is incremented every clock cycle.
+This register can be read with two different instructions: \texttt{RDTSC} and \texttt{RDTSCP}. The latter
+reads the TSC and other information about the CPU that issues the instruction itself. However, there a
+number of possible issues that needs to be addressed in order to have a reliable measure:
+
+\begin{itemize}
+\item \emph{CPU frequency scaling and power management.} Modern CPUs can dynamically vary frequency to reduce
+energy consumption. Recently, CPUs manufacturer has introduced a special version of TSC inside their CPUs:
+\emph{constant TSC}. This kind of register is always incremented at CPU maximum frequency, regardless
+of CPU actual frequency. Every CPU that supports that feature has the flag \emph{constant\_tsc} in
+\texttt{/proc/cpuinfo} proc file of Linux. Unfortunately, even if the update rate of TSC is constant in
+these conditions, the CPU frequency scaling can heavily alter measurements by slowing down the code
+unpredictably; hence, we have conducted every experiment with all CPUs at fixed maximum frequency and
+no power-saving features enabled. To do this the \texttt{cpufreq} utility has been used.
+\item \emph{TSC synchronisation between different cores.} Since every core has its own TSC, it is
+possible that a misalignment between different TSCs may occur. Even if the kernel runs a synchronisation
+routine at start up (as we can see in the kernel log message), the synchronisation accuracy is tipically
+in the range of several hundred clock cycles. To avoid this problem, we have set CPU affinity of every
+thread with a specific CPU index. In other words we have a 1:1 association between threads and CPUs, fixed
+for the entire simulation time. In this way we also prevent thread migration during an operation, which
+may introduce unexpected delays.
+\item \emph{CPU instruction reordering.} To avoid instruction reordering, we use two instructions that
+guarantees serialisation: \texttt{RDTSCP} and \texttt{CPUID}. The latter guarantees that no instructions
+can be moved over or beyond it, but has a non-negligible and variable calling overhead. The former, in
+contrast, only guarantees that no previous instructions will be moved over. In conclusion, as suggested
+in~\cite{intelTSCpaper}, we used the following sequence to measure a given code snippet:
+\begin{lstlisting}
+  CPUID
+  RDTSC
+  code
+  RDTSCP 
+  CPUID
+\end{lstlisting}
+\item \emph{Compiler instruction reordering.} Even the compiler can reorder instructions; so we marked the
+inline asm code that reads and saves the TSC current value with the keyword \emph{volatile}.
+\item \emph{Page faults.} To avoid page fault time accounting we locked every page of the process in memory
+with a call to \texttt{mlockall}.
+\end{itemize}
+
+PRACTISE collects every measurement sample in a global multidimensional array, where we keep samples coming
+from different CPUs separated. After all simulation cycles are terminated, all the samples are written to
+an output file.
+
+By default, PRACTISE measures the following statistics:
+
+\begin{itemize}
+\item duration and number of \emph{push} and \emph{pull} operations;
+\item number of \emph{enqueue} and \emph{dequeue} operations;
+\item duration and number of \emph{data\_preempt}, \emph{data\_finish} and \emph{data\_find} operations
+\end{itemize}
+
+It is possible to add different measures in the code of a specific algorithm by using PRACTISE's macros.\\
+For example, suppose that we want to measure the number of clock cycles that a code snippet takes to be
+executed: we refer to this piece of code as \emph{operation\_under\_measure} in the subsequent
+explanation.
+
+To enable the measure samples collection we have to:
+
+\begin{itemize}
+\item insert the following lines of code in \emph{include/measure.h} header file:
+
+\begin{lstlisting}
+EXTERN_MEASURE_VARIABLE(operation_under_measure)
+EXTERN_DECL(ALL_COUNTER(operation_under_measure))
+\end{lstlisting}
+
+and also the following lines in \emph{src/measure.c} source file:
+
+\begin{lstlisting}
+MEASURE_VARIABLE(operation_under_measure)
+ALL_COUNTER(operation_under_measure)
+\end{lstlisting}
+
+to declare the array that will holds all the measurement samples and the variable that will 
+holds the number of measurement samples collected (useful for average calculation).
+
+\item insert the following lines of code at the beginning and at the end of the \texttt{main} 
+function in \emph{src/practise.c} source file, respectively:
+
+\begin{lstlisting}
+MEASURE_ALLOC_VARIABLE(operation_under_measure)
+
+MEASURE_FREE_VARIABLE(operation_under_measure)
+\end{lstlisting}
+
+to allocate memory for the measurement samples global array.
+
+\item surround the code snippet to measure with the following two instructions:
+
+\begin{lstlisting}
+MEASURE_START(operation_under_measure, CPU-index)
+
+<code_to_measure>
+
+MEASURE_END(operation_under_measure, CPU-index)
+\end{lstlisting}
+
+where \texttt{CPU-index} is the CPU that is executing the code under measure. This is
+useful if we want to analyze how much operations a specific CPU carries on.
+
+\item finally, add those lines of code in \emph{src/practise.c}:
+
+\begin{lstlisting}
+MEASURE_STREAM_OPEN(operation_to_measure, online_cpus);
+for(i = 0; i < online_cpus; i++){
+	MEASURE_PRINT(out_operation_to_measure, operation_to_measure, i);
+	fprintf(out_operation_to_measure, "\n");
+}
+MEASURE_STREAM_CLOSE(operation_to_measure);
+\end{lstlisting}
+
+to print all the measurements sample in a properly formatted way.
+
+\end{itemize}
+
+\section{Evaluation\label{sec:PRACTISE_eval}}
+
+In this section, we show how difficult is to port a scheduler developed with the help of
+PRACTISE into the Linux kernel; then, we report performance analysis figures and discuss
+the different results obtained in user space with PRACTISE and inside the kernel.
+
+\subsection{Porting to Linux\label{sec:PRACTISE_port_Linux}}
+
+The effort in porting an algorithm developed with PRACTISE in Linux can be estimated by
+counting the number of different lines of code in the two implementations. We have two
+global data structures implemented both in PRACTISE and in the Linux kernel: \emph{cpudl}
+and \emph{cpupri}.\\
+We used the \texttt{diff} utility to compare differences between user-space and kernel code
+of each data structure. Results are summarised in Table~\ref{tab:diff}.
+
+\begin{table*}[htb]
+\input{tabs/diff.tex}
+\caption{Differences between user-space and kernel code.}
+\label{tab:diff}
+\end{table*}
+
+Less than 10\% of changes were required to port \emph{cpudl} to Linux, these differences
+mainly due to the framework interface (that is, pointers conversion). Slightly higher 
+changes ratio for \emph{cpupri}, due to the quite heavy use of atomic operations.
+An example of such changes is given in Figure~\ref{fig:ex-diff} (lines with a \texttt{-}
+correspond to user-space code, while those with a \texttt{+} to kernel code).
+
+\begin{figure}
+  \centering
+\begin{lstlisting}[frame=single]
+[...]
+-void cpupri_set(void *s, int cpu, int newpri)
++void cpupri_set(struct cpupri *cp, int cpu,
++                 int newpri)
+ {
+-   struct cpupri *cp = (struct cpupri*) s;
+    int *currpri = &cp->cpu_to_pri[cpu];
+    int oldpri  = *currpri;
+    int do_mb = 0;
+@@ -63,57 +61,55 @@
+    if (newpri == oldpri)
+         return;
+
+-   if (newpri != CPUPRI_INVALID) {
++   if (likely(newpri != CPUPRI_INVALID)) {
+         struct cpupri_vec *vec =
+                      &cp->pri_to_cpu[newpri];
+
+         cpumask_set_cpu(cpu, vec->mask);
+-        __sync_fetch_and_add(&vec->count, 1);
++        smp_mb__before_atomic_inc();
++        atomic_inc(&(vec)->count);
+         do_mb = 1;
+    }
+[...]
+\end{lstlisting}
+  \caption{Comparison using \texttt{diff}.}
+\label{fig:ex-diff}
+\end{figure}
+
+The difference on the synchronisation code can be reduced by using appropriate macros.
+For example, we could introduce a macro that translates to \texttt{\_\_sync\_fetch\_and\_add}
+when compiled inside PRACTISE, and to the corresponding Linux code otherwise. However,
+we decide to mantain the different code to highlight the differences between the two 
+frameworks, rather than hide them.
+
+In conclusion, the amount of work shouldered on the developer to transfer the implemented
+algorithm to the kernel, after testing, is quite low reducing the probability of introducing
+bugs during the porting.

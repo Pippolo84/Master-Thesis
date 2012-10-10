@@ -1,0 +1,109 @@
+\chapter{Introduction\label{chap:introduction}}
+
+Multiprocessor systems are nowadays de facto standard for both personal
+computers and server workstations. Benefits of dual-core and quad-core
+technology is also common in embedded devices and cellular phones as
+well. In fact, raw increases in computational power is no more the answer 
+for overall better performance: the energy efficiency is a 
+primary concern, that can't be ignored at any level of a system design, 
+from hardware to software. Regarding the hardware layer, multicore and multiprocessors 
+technologies surely gived an answer to that issue, but without a proper software 
+design, the scalability of the entire system may suffer.
+
+The role of the operating system scheduler is fundamental while managing
+the threads of execution: a sub-optimal schedule may lead to high latency
+and very poor overall performance. If real time tasks, characterized by 
+strictly timing constraints, are also considered, we can easily understand 
+that finding an optimal schedule is far from trivial.
+
+Linux, as a General Purpose Operating System (GPOS), should be able
+to run on every possible system, from workstations to mobile devices.
+Even if each configuration has its own issues, the common trend seems
+to be a considerable interest in using Linux for real-time and control
+applications.
+
+But Linux has not been designed to be a Real-Time Operating System (RTOS)
+and this imply that a classical real-time feasibility study of the
+system under development is not possible, there's no way to be sure that
+timing requirements of tasks will be met under \emph{every} circumstance.
+POSIX-compliant fixed-prority policies offered by Linux are not enough
+for specific application requirements.
+
+Great issues arise when size, processing power, energy consumption and
+costs are tightly constrained. Time-sensitive applications (e.g., MPEG
+players) for embedded devices have to efficiently make use of system
+resources and, at the same time, meet the real-time requirements.
+
+In a recent paper~\cite{SCHEDDEAD}, Dario Faggioli and others proposed an
+implementation of the ``Earliest Deadline First'' (EDF) algorithm
+in the Linux kernel. In order to extend stock Linux kernel's features
+a new scheduling policy has been created: \texttt{SCHED\_DEADLINE}. Later,
+Juri Lelli extended that scheduling policy to add processes migration
+between CPUs ~\cite{lelli2011efficient}. This allowed to reach full utilization of the
+system in multicore and multiprocessor environment. While the proposed
+implementation is indeed effective, a problem of scalability arises
+when the scheduler has to dinamically assigns real-time tasks to
+an high number of online CPUs. All the scheduler shared data structures are
+potential performance bottlenecks: the contention to manipulate tha data 
+structure may increase a lot, leading to unpredictable and unbounded 
+latencies.
+
+Unfortunately, the development of new solutions to manage concurrency
+in kernel space is far from trivial: when the number of parallel
+scheduler instances increases the common tools used for debugging
+are not so effective.
+
+In this thesis, we propose PRACTISE, a tool for performance analysis and
+testing of real-time multicore schedulers for the Linux kernel. PRACTISE
+enables fast prototyping of real-time multicore scheduling mechanisms,
+allowing easy debugging and testing of such mechanisms in user-space.
+Thanks to PRACTISE we developed a set of innovative solutions to improve
+the scalability of the processes migration mechanism. We will show that,
+with those modifications, not only a better scalability has been reached,
+but also a schedule closer to \emph{G-EDF} policy of the tasks has been
+achieved.
+
+This document is organized as follows.
+
+Chapter 1 (\textbf{Background}) gives a brief overview of the concepts and
+the theory on which this thesis is based. First, the modular framework of
+the Linux scheduler is analyzed (with special attention to multiprocessors
+systems), then we find the state of the art of real time scheduling on Linux.
+Since we will improve the \texttt{SCHED\_DEADLINE} implementation, in this
+chapter we also give some insights on the theory behind those real time
+scheduling algorithms and analyze how they are implemented inside the
+Linux kernel. Finally, we will discuss in great detail about the
+current implementation of the task migrations algorithm in \texttt{SCHED\_DEADLINE}
+scheduling class.
+
+
+Chapter 2 (\textbf{Synchronization Mechanisms Analysis}) gives a detailed
+explanation of the available mechanisms to manage concurrent accesses on
+a shared data structure. In particular, we will refer to the synchronization
+techniques in Linux kernel. Finally, we will explain a recently proposed
+framework that aims to improve performance for shared data structures
+accessed in parallel by a significant number of threads.
+
+
+In Chapter 3 (\textbf{New Solutions for Task Migration}) we present a set
+of new solutions for the task migration algorithms. We will show the main idea
+behind each of those to explain why such a design was chosen.
+
+
+Chapter 4 (\textbf{PRACTISE Framework}) contains the details of PRACTISE
+implementation. Here we will explain how PRACTISE was designed and how it
+can be used to facilitate the development of new kernel code. In the last
+part of the chapter we focus on the ability of PRACTISE to predict the
+relative performance of the various algorithm simulated with it.
+
+
+Chapter 5 (\textbf{Experimental Results}) contains the graphs that show
+the results of our experiments conducted with the Linux kernel. We present
+the results of each new algorithm discussed above, explaining why a certain
+performance trend is achieved. Doing so, we will point out the main advantages
+and also the disadvantages of each solution.
+
+
+Finally, in Chapter 6 (\textbf{Conclusions and Future Works}), we sum up
+results and suggest possible future extensions to the code as well as alternate
+ways of testing.

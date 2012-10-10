@@ -1,0 +1,19 @@
+\centering
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|c|c|c|}
+  \hline \textbf{Linux}& \textbf{PRACTISE}& \textbf{Action}\\[5pt]
+  \hline raw\_spin\_lock   & pthread\_spin\_lock       & lock a structure\\
+  \hline raw\_spin\_unlock & pthread\_spin\_unlock     & unlock a structure\\
+  \hline atomic\_inc       & \_\_sync\_fetch\_and\_add & add a value in memory atomically\\
+  \hline atomic\_dec       & \_\_sync\_fetch\_and\_sub & subtract a value in memory atomically\\
+  \hline atomic\_read      & simple read               & read a value from memory \\ 
+  \hline wmb               & \_\_sync\_synchronize     & issue a memory barrier \\
+  \hline rmb               & \_\_sync\_synchronize     & issue a read memory barrier \\
+  \hline mb                & \_\_sync\_synchronize     & issue a full memory barrier \\\hline
+\end{tabular}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../framework-paper"
+%%% End: 

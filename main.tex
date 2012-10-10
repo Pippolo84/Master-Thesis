@@ -1,0 +1,171 @@
+\documentclass[a4paper, 12pt, openright, oneside, final]{book}
+\usepackage{eso-pic}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage[english]{babel}
+\usepackage{listings}
+\usepackage{varioref}
+\usepackage{subfigure}
+\usepackage{verbatim}
+\usepackage{amsmath}
+\usepackage[pdftex,bookmarks=true,hypertexnames=true]{hyperref}
+\usepackage{fancyhdr}
+\newcommand{\fncyblank}{\fancyhf{}}
+\newenvironment{abstract}%
+{\cleardoublepage\fncyblank\null\vfill\begin{center}%
+\bfseries\abstractname\end{center}}%
+{\vfill\null}
+
+%\lstset{%
+%  basicstyle=\small,
+%  frame=tb,
+%  captionpos=b,
+%  stringstyle=\ttfamily,
+%  showstringspaces=false,
+%  numbers=left,
+%  numberstyle=\tiny,
+%  framextopmargin=2pt,
+%  framexbottommargin=2pt,
+%  stepnumber=1,
+%  numbersep=5pt}
+
+\usepackage{courier}
+\usepackage{color}
+\usepackage{xcolor}
+\lstset{
+         basicstyle=\scriptsize\ttfamily, % Standardschrift
+         %numbers=left,               % Ort der Zeilennummern
+         numberstyle=\tiny,          % Stil der Zeilennummern
+         %stepnumber=2,               % Abstand zwischen den Zeilennummern
+         numbersep=5pt,              % Abstand der Nummern zum Text
+         tabsize=2,                  % Groesse von Tabs
+         extendedchars=true,         %
+         breaklines=true,            % Zeilen werden Umgebrochen
+         keywordstyle=\color{red},
+         frame=b,         
+ %        keywordstyle=[1]\textbf,    % Stil der Keywords
+ %        keywordstyle=[2]\textbf,    %
+ %        keywordstyle=[3]\textbf,    %
+ %        keywordstyle=[4]\textbf,   \sqrt{\sqrt{}} %
+         stringstyle=\color{black}\ttfamily, % Farbe der String
+         showspaces=false,           % Leerzeichen anzeigen ?
+         showtabs=false,             % Tabs anzeigen ?
+         xleftmargin=5pt,
+         framexleftmargin=5pt,
+         framexrightmargin=5pt,
+         framexbottommargin=4pt,
+         %backgroundcolor=\color{lightgray},
+         showstringspaces=false      % Leerzeichen in Strings anzeigen ?        
+}
+\lstloadlanguages{% Check Dokumentation for further languages ...
+         %[Visual]Basic
+         %Pascal
+         C
+         %C++
+         %XML
+         %HTML
+         %Java
+}
+%\DeclareCaptionFont{blue}{\color{blue}} 
+
+%\captionsetup[lstlisting]{singlelinecheck=false, labelfont={blue},
+%textfont={blue}}
+\usepackage{caption} \DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{\colorbox[cmyk]{0.43, 0.35,
+0.35,0.01}{\parbox{\textwidth}{\hspace{15pt}#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white,
+singlelinecheck=false, margin=0pt, font={bf,footnotesize}}
+
+
+\hypersetup{
+pdfauthor= {Fabio Falzoi},
+pdftitle= {Design, testing and performance analisys of efficient lock-free solutions 
+for multi-core Linux scheduler},
+pdfsubject = {Design, testing and performance analisys of efficient 
+lock-free solutions for multi-core Linux scheduler },
+pdfkeywords = {realtime, scheduling, linux, edf, multiprocessor, multicore, deadline},
+pdfborder = { 0 0 0 0 }
+}
+
+\onehalfspacing
+\begin{document}
+\frontmatter
+
+% Frontpage
+\input{frontpage}
+
+% dedication
+\input{dedication}
+
+% abstract
+\begin{abstract}
+  Multiprocessor systems are now the de facto preferred computing
+  platform for many application domains, including personal computers
+  and server workstations.
+  
+  The benefits of multi-core technology in terms of increased
+  computational power with a reduced energy consumption, are now being
+  used for more implementing efficient embedded devices and personal
+  appliances like smart phones and tablets. 
+  
+  A popular OS like Linux, which was not originally designed to be a
+  Real-Time Operating System (RTOS), is now being used for embedded
+  real-time systems with multi-core platforms. Consequently, many
+  flavors of Linux now include a real-time scheduler. One recent
+  example of real-time scheduler for Linux is the SCHED\_DEADLINE
+  patch, an implementation of the popular ``Earliest Deadline First''
+  algorithm. Such scheduler can be useful also for large many-core
+  server workstations, because it helps to control the quality of
+  service of the user requests. For this reason, it is important that
+  the scheduler implementation to be efficient and scale well with the
+  number of processors.
+
+  In this thesis, I present two original contributions to the area of
+  real-time scheduling in the Linux kernel. First, I present PRACTISE,
+  a tool to develop, debug, test and analyse real-time scheduling data
+  structures in user space. Unlike other similar tools, PRACTISE
+  executes code in parallel, allowing to test and analyse the
+  performance of the code in a realistic multiprocessor scenario.
+
+  Then, I present several data structures for implementing a
+  distributed queue to efficiently support global scheduling in a
+  large multi-core: max-heap and min-heap, skip-list with a
+  flat-combiner strategy, and a novel algorithm called
+  \emph{fast-cache}. I compare the different data structures and
+  algorithms using both PRACTISE and directly in the kernel.
+\end{abstract}
+
+
+\tableofcontents
+\listoffigures
+%\listoftables
+
+% Introduction to the work
+\input{introduction}
+
+\mainmatter
+% background
+\input{background}
+
+\input{synchro_mech_analysis}
+
+\input{data_structures_developed}
+
+\input{practise}
+
+% results
+\input{exp-results}
+
+% conclusions
+\input{conclusions}
+
+% code listings, etc.
+\input{appendix}
+
+\backmatter
+
+\input{acknowledgments}
+
+\bibliography{bibliography}
+\bibliographystyle{plain}
+\end{document}

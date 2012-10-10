@@ -1,0 +1,11 @@
+\centering
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|p{3cm}|p{5cm}|p{5.5cm}|}
+        \hline \textbf{Type}& \textbf{Mandatory}& \textbf{SMP Conditional} \\[5pt]
+        \hline General & \texttt{mb()} & \texttt{smp\_mb()} \\
+        \hline Write & \texttt{wmb()}  & \texttt{smp\_wmb()}  \\
+        \hline Read & \texttt{rmb()} & \texttt{smp\_rmb()} \\
+	\hline Data Dependency & \texttt{read\_barrier\_depends()} & \texttt{smp\_read\_barrier\_depends()} \\
+	\hline
+\end{tabular}

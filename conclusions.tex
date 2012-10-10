@@ -1,0 +1,64 @@
+\chapter{Conclusions and Future Work}\label{chap:conclusions}
+
+In this thesis, we presented PRACTISE a tool for performance analysis and
+testing of real-time multicore schedulers for the Linux kernel.
+PRACTISE enables fast prototyping of real-time multicore scheduling
+mechanisms, allowing easy debugging and testing of such mechanisms in
+user-space.
+We showed the ability of this novel framework to predict the relative 
+performance of multiple solutions.
+
+Thanks to PRACTISE we were able to develop a set of innovative solutions
+to manage the task migrations in \texttt{SCHED\_DEADLINE} scheduling class.
+We started with a probabilistic data structure, the skip list, that performs
+very well in \emph{find} operation. Then we developed a specific implementation
+of the flat combining framework, named bitmap flat combining. This algorithm
+performs even better than the skip list in \emph{find} operation. However,
+we showed that bitmap flat combining is not suitable for task migration mechanism.
+Finally, we developed fastcache, a novel algorithm that overcomes all previous
+one.
+
+Regarding PRACTISE, a lot of improvements can be made.
+
+First, it is possible to refine the framework adherence to the Linux kernel.
+In doing so, we have to enhance task affinity management, local runqueues
+capabilities and provide the possibility to generate random scheduling events
+following probability distributions gathered from real task sets execution
+traces. Moreover, an improvement to the \emph{performance analysis} mode can be
+made. In particular, the main goal
+is to alleviate the unpredictable latency introduced by a preemptive kernel
+while the user space code is under measure. A possible solution
+is first to develop some scripts that can translate the code in the
+kernel space equivalent one. After that, it will be possible to run that
+code inside PRACTISE, if the tool will be designed to work as a kernel
+module. Doing so, it will be possible to obtain more control on kernel
+preemption so as to obtain more accurate measurements.
+
+Thanks to PRACTISE, we developed a set of improved solutions for the
+\emph{cpudl} data structure. Driven by PRACTISE results, we decided
+to port each one of them in kernel space. The results show that, thanks to
+the \emph{fastcache} algorithm, the task migration latency
+has been reduced, with a significant improvement from the point of view
+of the scalability.
+
+A considerable result has also been obtained with the new pull algorithm:
+it has been showed that using a \texttt{cpudl} data structure even in the
+pull operation reduces the spurious task migrations, leading to a schedule
+closer to the theoretic \emph{G-EDF}.
+
+Regarding those aspects the research is all but over. To better understand
+how the schedules imposed by \texttt{SCHED\_DEADLINE} are close to \emph{G-EDF}
+a deep analysis is needed: it would be appropriate to develop a tool aimed
+to verify, for a given task sets, that the schedule obtained is really
+the \emph{G-EDF} one. Driven by this results, it will be possible to
+address all cases where a schedule divergency arises.
+
+Finally, the \emph{fastcache} algorithm opens several usage scenarios that
+deserve to be investigated. Probably, the most interesting of those is the
+implementation of a single global (but scalable) ready queue: this way,
+reaching a real \emph{G-EDF} scheduling policy will be plain. 
+The original \texttt{SCHED\_RT} scheduling class authors stated that a distributed
+runqueues design can scales well compared to a single global runqueue 
+one~\cite{molnar07}.
+But with the introduction of proper lock-free data structures and algoritms
+this statement may no longer be true.

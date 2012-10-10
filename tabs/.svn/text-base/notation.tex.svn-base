@@ -1,0 +1,16 @@
+\centering
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|c|c|}
+  \hline \textbf{Abbreviation}& \textbf{Operation}\\[5pt]
+  \hline set                  & update on global structure\\
+  \hline find                 & search on global structure\\
+  \hline enqueue              & enqueue on local cpu runqueue\\
+  \hline dequeue              & dequeue on local cpu runqueue\\
+  \hline push                 & push a task to some other cpu \\ \hline
+\end{tabular}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "../framework-paper"
+%%% End: 

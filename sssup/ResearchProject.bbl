@@ -1,0 +1,108 @@
+\begin{thebibliography}{10}
+
+\bibitem{abeniButtazzo04}
+L.~Abeni and G.~Buttazzo.
+\newblock Resource reservations in dynamic real-time systems.
+\newblock {\em Real-Time Systems}, 27(2):123--165, 2004.
+
+\bibitem{abeniButtazzo98}
+L.~Abeni and G.~Buttazzo.
+\newblock Integrating multimedia applications in hard real-time systems.
+\newblock In {\em Proceedings of the IEEE Real-Time Systems Symposium}, Madrid,
+  Spain, December 1998.
+
+\bibitem{AQuoSA}
+AQuoSA.
+\newblock Aquosa - ``adaptive quality of service architecture'' (for the linux
+  kernel).
+\newblock \url{http://aquosa.sourceforge.net/index.php}.
+
+\bibitem{imp_global_sched}
+B.~Brandenburg and J.~Anderson.
+\newblock On the implementation of global real-time schedulers.
+\newblock In {\em Proceedings of the 30th IEEE Real-Time Systems Symposium},
+  pages 214--224, December 2009.
+
+\bibitem{scalability_sched}
+B.~Brandenburg, J.~Calandrino, and J.~Anderson.
+\newblock On the scalability of real-time scheduling algorithms on multicore
+  platforms: A case study.
+\newblock In {\em Proceedings of the 29th IEEE Real-Time Systems Symposium},
+  pages 157--169, December 2008.
+
+\bibitem{H-EDF}
+J.~Calandrino, J.~Anderson, and J.~Baumberger.
+\newblock A hybrid real-time scheduling approach for large-scale multicore
+  platforms.
+\newblock In {\em Proceedings of the 19th Euromicro Conference on Real-time
+  Systems}, pages 247--256, July 2007.
+
+\bibitem{HOS}
+J.~Carpenter, S.~Funk, P.~Holman, A.~Srinivasan, J.~Anderson, and S.~Baruah.
+\newblock {\em Handbook of Scheduling: Algorithms, Models and Performance
+  Analysis}, chapter 30: A Categorization of Real-Time Multiprocessor
+  Scheduling Problems and Algorithms.
+\newblock Chapman Hall/CRC Press, 2004.
+
+\bibitem{scheddeadv2}
+Dario Faggioli.
+\newblock sched: Sched\_deadline v2.
+\newblock \url{http://lkml.org/lkml/2010/2/28/107}.
+
+\bibitem{SCHED_EDF09}
+Dario Faggioli, Michael Trimarchi, Fabio Checconi, and Scordino Claudio.
+\newblock An edf scheduling class for the linux kernel.
+\newblock In {\em Proceedings of the 11th Real-Time Workshop (RTLW)}, October
+  2009.
+
+\bibitem{FRESCOR}
+FRESCOR.
+\newblock Framework for real-time embedded systems based on contracts.
+\newblock \url{http://www.frescor.org/index.php?page=FRESCOR-homepage}.
+
+\bibitem{unit_trace}
+UNC's Real-Time Group.
+\newblock \url{http://cs.unc.edu/~mollison/unit-trace/}.
+
+\bibitem{RETIS}
+ReTiS Lab.
+\newblock Scuola superiore sant'anna di pisa.
+\newblock \url{http://retis.sssup.it}.
+
+\bibitem{windriver}
+Wind~River Linux.
+\newblock \url{http://www.windriver.com/products/linux/}.
+
+\bibitem{LiuL1973}
+C.~L. Liu and James~W. Layland.
+\newblock Scheduling algorithms for multiprogramming in a hard-real-time
+  environment.
+\newblock {\em J. ACM}, 20(1):46--61, January 1973.
+
+\bibitem{montavista}
+montavista.
+\newblock \url{http://www.mvista.com/real_time_linux.php}.
+
+\bibitem{SCHEDDEAD}
+Evidence S.r.l.
+\newblock Sched\_deadline.
+\newblock \url{http://www.evidence.eu.com/content/view/313/390/}.
+
+\bibitem{stankovic98}
+John~A. Stankovic, K.~Ramamritham, M.~Spuri, and G.~Buttazzo.
+\newblock {\em Deadline Scheduling for Real-Time Systems: EDF and Related
+  Algorithms}.
+\newblock Kluwer Academic Publishers, 1998.
+
+\bibitem{ARM}
+techradar.com.
+\newblock Arm: dual core mobiles coming in 2010.
+\newblock
+  \url{http://www.techradar.com/news/phone-and-communications/mobile-phones/
+  arm-dual-core-mobiles-coming-in-2010-645417?src=rss\&attr=all}.
+
+\bibitem{timesys}
+Timesys.
+\newblock \url{https://linuxlink.timesys.com/3/Linux}.
+
+\end{thebibliography}
